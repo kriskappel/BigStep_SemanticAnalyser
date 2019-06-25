@@ -23,6 +23,7 @@ data CExp = While BExp CExp
     | Skip
     | Repeat BExp CExp
     | Swap AExp AExp
+    | For AExp AExp AExp CExp
    deriving(Show)                
 
 
@@ -98,9 +99,15 @@ cbigStep (Repeat b c, s) = case bbigStep (b,s) of
 
 cbigStep (Swap (Var x) (Var y), s) = let n1 = (procuraVar s x)
                                          n2 = (procuraVar s y)
-                                     in ((mudaVar s y n1), (mudaVar s x n2))
+                                     in (Skip, mudaVar (mudaVar s x n2) y n1)
 
+--cbigStep (For v i j c, s) =  case (fst (abigStep ( (Som i (Num 1) ), s) ) == fst( abigStep(j, s)) ) of
+--                                      (True) ->  (cbigStep (Atrib v (Som i (Num 1)), s))
+--                                      (False) -> (cbigStep (Seq (Atrib v (Som i (Num 1))) (Seq c (For v (Som i (Num 1)) j c)), s) )
 
+cbigStep (For v i j c, s) = case bbigStep(Ig i j, s) of
+                                 (True, _) ->  (Skip, s)
+                                 (False, _) -> cbigStep (Seq (Atrib v i) (Seq c (For v (Som i (Num 1)) j c)),s)                        
 
 
 --TESTES
@@ -157,3 +164,13 @@ testec2 = (Seq
               (Atrib (Var "y") (Var "z"))
           )
 
+testswap :: CExp
+testswap = (Swap (Var "x") (Var "y"))
+
+testfor :: CExp
+testfor = (For (Var "x") (Num 0) (Num 10) (Atrib (Var "y")(Som (Var "y")(Num 1))))
+testfor2 :: CExp
+testfor2 = (For (Var "x") (Num 0) (Num 10) (Atrib (Var "x")(Mul (Var "x")(Num 2))))
+
+testrepeat :: CExp
+testrepeat = (Repeat (Ig (Var "x") (Var"y")) (Seq (Atrib (Var "y")(Som (Var "y")(Num 1))) (Atrib (Var "z")(Som (Var "z")(Num 10))) )  )
